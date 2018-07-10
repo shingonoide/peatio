@@ -15,6 +15,7 @@ while running
 
     # TODO: Call BlockchainService here passing blockchain bc
     #
+
     Rails.logger.info { "Processing #{bc.name} blocks." }
   rescue => e
     report_exception(e)
