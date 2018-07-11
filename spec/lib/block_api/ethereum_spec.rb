@@ -15,11 +15,14 @@ describe BlockAPI::Ethereum do
     let(:end_block) { 2610906 }
     let(:current_block) { 2610847 }
     let(:block_data) { Rails.root.join('spec', 'resources', 'ethereum-data.json') }
+    let!(:payment_address) { create(:eth_payment_address, address: '0xdf87837df26801BDcB3602E722ACA82d5beaAb04')}
+
+
     subject { client.get_block(current_block) }
 
-    def request_body(block_number)
+    def request_body(block_number, index)
       { jsonrpc: '2.0',
-        id:      1,
+        id:      index + 1,
         method:  'eth_getBlockByNumber',
         params:  [block_number, true]
       }.to_json
@@ -28,15 +31,18 @@ describe BlockAPI::Ethereum do
     before do
       File.open(block_data) do |f|
         blocks = JSON.load (f)
-        blocks.each do |blk|
-          stub_request(:post, client.endpoint).with(body: request_body(blk['result']['number'])).to_return(body: blk.to_json)
-          #binding.pry
+        blocks.each_with_index  do |blk,index|
+          # binding.pry
+          stub_request(:post, client.endpoint).with(body: request_body(blk['result']['number'],index)).to_return(body: blk.to_json)
         end
       end
+      BlockAPI::Ethereum.any_instance.expects(:latest_block_number).returns(2610906)
     end
 
     it do
-      is_expected.to eq(current_block)
+      svc = BlockchainService::Ethereum.new(Blockchain.find_by_key('eth-rinkeby'))
+      svc.process_blockchain
+      #is_expected.to eq(current_block)
     end
   end
 end

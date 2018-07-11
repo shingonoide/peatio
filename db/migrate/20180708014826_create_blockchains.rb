@@ -14,6 +14,6 @@ class CreateBlockchains < ActiveRecord::Migration
       t.timestamps null: false
     end
 
-    add_column :currencies, :blockchain_key, :string, limit: 32, first: true
+    add_column :currencies, :blockchain_key, :string, limit: 32, after: :id
   end
 end

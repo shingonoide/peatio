@@ -12,6 +12,12 @@ FactoryBot.define do
       account { create(:member, :level_3).get_account(:btc) }
     end
 
+    trait :eth_address do
+      currency { Currency.find(:eth) }
+      account { create(:member, :level_3).get_account(:eth) }
+    end
+
     factory :btc_payment_address, traits: [:btc_address]
+    factory :eth_payment_address, traits: [:eth_address]
   end
 end
