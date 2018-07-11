@@ -37,26 +37,10 @@ module BlockAPI
     # Returns hot wallet balance.
     #
     # @abstract Derived API clients must implement it.
+    #
+    # @param currency [String, Symbol]
     # @return [BigDecimal]
-    def load_balance!
-      method_not_implemented
-    end
-
-    #
-    # TODO: Docs.
-    #
-    # @abstract Derived API clients must implement it.
-    # @return [Array<Hash>]
-    def each_deposit
-      method_not_implemented
-    end
-
-    #
-    # TODO: Docs.
-    #
-    # @abstract Derived API clients must implement it.
-    # @return [Array<Hash>]
-    def each_deposit!
+    def load_balance!(currency)
       method_not_implemented
     end
 
