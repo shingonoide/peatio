@@ -7,18 +7,16 @@ module BlockAPI
 
   class << self
     #
-    # Returns API client for given currency code.
+    # Returns API client for given blockchain key.
     #
-    # @param code [String, Symbol]
-    #   The currency code. May be uppercase or lowercase.
+    # @param key [String, Symbol]
+    #   The blockchain key.
     # @return [BaseAPI]
-    def [](code)
-      currency = Currency.find(code)
-      if currency.try(:api_client).present?
-        "BlockAPI::#{currency.api_client.camelize}"
-      else
-        "BlockAPI::#{code.upcase}"
-      end.constantize.new(currency)
+    def [](key)
+      blockchain = Blockchain.find_by_key(key)
+      if blockchain.try(:client).present?
+        "BlockAPI::#{blockchain.client.capitalize}"
+      end.constantize.new(blockchain)
     end
   end
 
@@ -26,13 +24,13 @@ module BlockAPI
     extend Memoist
 
     #
-    # Returns the currency.
+    # Returns the blockchain.
     #
-    # @return [Currency]
-    attr_reader :currency
+    # @return [blockchain]
+    attr_reader :blockchain
 
-    def initialize(currency)
-      @currency = currency
+    def initialize(blockchain)
+      @blockchain = blockchain
     end
 
     #
@@ -98,7 +96,7 @@ module BlockAPI
     end
 
     def convert_to_base_unit!(value)
-      x = value.to_d * currency.base_factor
+      x = value.to_d * blockchain.base_factor
       unless (x % 1).zero?
         raise CoinAPI::Error, "Failed to convert value to base (smallest) unit because it exceeds the maximum precision: " +
                               "#{value.to_d} - #{x.to_d} must be equal to zero."
@@ -107,15 +105,15 @@ module BlockAPI
     end
 
     def convert_from_base_unit(value)
-      value.to_d / currency.base_factor
+      value.to_d / blockchain.base_factor
     end
 
     def normalize_address(address)
-      currency.case_sensitive? ? address : address.downcase
+      blockchain.case_sensitive? ? address : address.downcase
     end
 
     def normalize_txid(txid)
-      currency.case_sensitive? ? txid : txid.downcase
+      blockchain.case_sensitive? ? txid : txid.downcase
     end
 
     %i[ load_balance load_deposit create_address create_withdrawal inspect_address ].each do |method|
