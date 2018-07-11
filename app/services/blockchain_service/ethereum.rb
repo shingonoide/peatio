@@ -1,17 +1,8 @@
 # encoding: UTF-8
 # frozen_string_literal: true
 
-module Services
-  class BlockchainService
-
-    def initialize(blockchain)
-      @blockchain = blockchain
-      @client     = BlockAPI[blockchain.client]
-    end
-
-    def current_height
-      @blockchain.height
-    end
+module BlockchainService
+  class Ethereum < BaseService
 
     def process_blockchain
       current_block   = @blockchain.height || 0
@@ -19,7 +10,7 @@ module Services
 
       while current_block <= latest_block
         deposits = []
-        block_json          = @client.block_information("0x" + current_block.to_s(16))
+        block_json          = @client.get_block(current_block)
         if block_json
           transactions        = block_json.fetch('transactions')
           transactions.each do |tx|
@@ -32,10 +23,9 @@ module Services
             currency = find_currency(tx)
             next unless currency
 
-            address = BlockAPI[currency.code].to_address(tx)
-            deposits << BlockAPI[currency.code].build_deposit(tx, block_json, latest_block ) if Wallet.active.where(address: address, kind: 'deposit').exists? || PaymentAddress.where(currency: currency, address: address).exists?
+            address = @client.to_address(tx)
+            deposits << @client.build_deposit(tx, block_json, latest_block, currency) if is_address_available?(address, currency)
           end
-
           # sql transaction to update the height and INSERT all Deposits / Withdrawal founder
         end
 
@@ -47,7 +37,7 @@ module Services
 
     def find_currency(tx)
       if tx['input'].blank? || tx['input'].hex <= 0
-        @client.currency
+        Currency.find(:eth)
       else
         Currency.find{|c| @client.normalize_address(tx['to']) == c.erc20_contract_address}
       end

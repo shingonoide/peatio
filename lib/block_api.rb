@@ -104,8 +104,8 @@ module BlockAPI
       x.to_i
     end
 
-    def convert_from_base_unit(value)
-      value.to_d / blockchain.base_factor
+    def convert_from_base_unit(value, currency)
+      value.to_d / currency.base_factor
     end
 
     def normalize_address(address)

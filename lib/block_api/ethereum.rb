@@ -59,6 +59,28 @@ module BlockAPI
       json_rpc(:eth_getBlockByNumber, ["0x#{current_block.to_s(16)}", true]).fetch('result')
     end
 
+    def to_address(tx)
+      if is_coin?(tx)
+        normalize_address(tx['to'])
+      else
+        normalize_address('0x' + abi_explode(tx['input'])[:arguments][0][26..-1])
+      end
+    end
+
+    def build_deposit(tx, current_block, latest_block, currency)
+      if is_coin?(tx)
+        build_coin_deposit(tx, current_block, latest_block, currency)
+      else
+        build_erc20_deposit(tx, current_block, latest_block, currency)
+      end
+    end
+
+    def latest_block_number
+      Rails.cache.fetch :latest_ethereum_block_number, expires_in: 5.seconds do
+        json_rpc(:eth_blockNumber).fetch('result').hex
+      end
+    end
+
   protected
 
     def connection
@@ -82,11 +104,6 @@ module BlockAPI
       response
     end
 
-    def latest_block_number
-      Rails.cache.fetch :latest_ethereum_block_number, expires_in: 5.seconds do
-        json_rpc(:eth_blockNumber).fetch('result').hex
-      end
-    end
 
     def block_information(number)
       json_rpc(:eth_getBlockByNumber, [number, false]).fetch('result')
@@ -126,6 +143,29 @@ module BlockAPI
 
     def valid_txid?(txid)
       txid.to_s.match?(/\A0x[A-F0-9]{64}\z/i)
+    end
+
+    def is_coin?(tx)
+      false
+      true if tx['input'].blank? || tx['input'].hex <= 0
+    end
+
+    def build_coin_deposit(tx, current_block, latest_block, currency)
+      { id:            normalize_txid(tx.fetch('hash')),
+        confirmations: latest_block - current_block.fetch('number').hex,
+        received_at:   Time.at(current_block.fetch('timestamp').hex),
+        entries:       [{ amount:  convert_from_base_unit(tx.fetch('value').hex, currency),
+                          address: normalize_address(tx['to']) }] }
+    end
+
+    def build_erc20_deposit(tx, current_block, latest_block, currency)
+      arguments = abi_explode(tx['input'])[:arguments]
+
+      { id:            normalize_txid(tx.fetch('hash')),
+        confirmations: latest_block - current_block.fetch('number').hex,
+        received_at:   Time.at(current_block.fetch('timestamp').hex),
+        entries:       [{ amount:  convert_from_base_unit(arguments[1].hex,currency),
+                          address: normalize_address('0x' + arguments[0][26..-1]) }] }
     end
   end
 end
