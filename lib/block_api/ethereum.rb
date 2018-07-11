@@ -70,7 +70,7 @@ module BlockAPI
 
     def build_deposit(tx, current_block, latest_block, currency)
       if is_eth_tx?(tx)
-        build_coin_deposit(tx, current_block, latest_block, currency)
+        build_eth_deposit(tx, current_block, latest_block, currency)
       else
         build_erc20_deposit(tx, current_block, latest_block, currency)
       end
@@ -158,7 +158,7 @@ module BlockAPI
       tx['input'].blank? || tx['input'].hex <= 0
     end
 
-    def build_coin_deposit(tx, current_block, latest_block, currency)
+    def build_eth_deposit(tx, current_block, latest_block, currency)
       { id:            normalize_txid(tx.fetch('hash')),
         confirmations: latest_block - current_block.fetch('number').hex,
         received_at:   Time.at(current_block.fetch('timestamp').hex),
