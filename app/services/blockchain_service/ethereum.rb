@@ -21,15 +21,11 @@ module BlockchainService
             next if tx['to'].blank?
             # Skip outcomes (less than zero) and contract transactions (zero).
             next if tx.fetch('value').hex.to_d <= 0
-            # Search Wallet or PaymentAddress for deposit address
-            #currency = find_currency(tx)
-            #next unless currency
 
             # WARNING: shitty code
             ## {
             address = @client.to_address(tx)
             address_in_db = find_address_in_db(address)
-            puts "address in db #{address_in_db}" if address_in_db.present?
             if address_in_db.present?
               trn = @client.build_deposit(tx, block_json, latest_block, address_in_db[:currency])
               trn.fetch(:entries).each_with_index do |entry, i|
@@ -47,14 +43,32 @@ module BlockchainService
             end
             ## }
 
-            #### Save single block deposits.
           end
-          deposits.each { |hash| Deposits::Coin.create! hash }
+
+          # Save single block deposits.
+          deposits.each do |deposit_hash|
+            # If deposit doesn't exist create it.
+            deposit = Deposits::Coin.find_or_create_by!(deposit_hash.except(:confirmations))
+
+            # Otherwise update confirmations amount for existing deposit.
+            if deposit.confirmations != deposit_hash.fetch(:confirmations)
+              deposit.update(confirmations: deposit_hash.fetch(:confirmations))
+            end
+
+            # Accept deposit if it received minimum confirmations for current blockchain.
+            if @blockchain.deposit_confirmations > 0 && deposit.confirmations >= @blockchain.deposit_confirmations
+              deposit.accept!
+            end
+          end
         end
 
-        # Update blockchain height.
+        # Mark block as processed if both deposits and withdrawals were confirmed.
+        @blockchain.update(height: current_block) if latest_block - current_block > @blockchain.confirmations_max
+
+        # Process next block.
         current_block += 1
-        @blockchain.update(height: current_block)
+
+        # TODO: exceptions processing.
       end
     end
 

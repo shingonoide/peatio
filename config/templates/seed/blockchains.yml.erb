@@ -3,6 +3,9 @@
   client:           ethereum
   server:           http://127.0.0.1:8545
   height:           2500000
+  confirmations:
+    deposit:        3
+    withdraw:       3
   explorer:
     address:        https://etherscan.io/address/#{address}
     transaction:    https://etherscan.io/tx/#{txid}
@@ -14,6 +17,9 @@
   client:           ethereum
   server:           http://127.0.0.1:8545
   height:           5000000
+  confirmations:
+    deposit:        3
+    withdraw:       3
   explorer:
     address:        https://etherscan.io/address/#{address}
     transaction:    https://etherscan.io/tx/#{txid}
@@ -25,6 +31,9 @@
   client:           bitcoin
   server:           http://127.0.0.1:18332
   height:           500000
+  confirmations:
+    deposit:        3
+    withdraw:       3
   explorer:
     address:        https://blockchain.info/address/#{address}
     transaction:    https://blockchain.info/tx/#{txid}

@@ -54,17 +54,19 @@ ActiveRecord::Schema.define(version: 20180708171446) do
   add_index "authentications", ["provider", "uid"], name: "index_authentications_on_provider_and_uid", unique: true, using: :btree
 
   create_table "blockchains", force: :cascade do |t|
-    t.string   "key",                  limit: 255,                null: false
-    t.string   "name",                 limit: 255
-    t.string   "client",               limit: 255
-    t.string   "server",               limit: 255
-    t.integer  "height",               limit: 4
-    t.string   "explorer_address",     limit: 255
-    t.string   "explorer_transaction", limit: 255
-    t.string   "status",               limit: 255
-    t.boolean  "case_sensitive",                   default: true, null: false
-    t.datetime "created_at",                                      null: false
-    t.datetime "updated_at",                                      null: false
+    t.string   "key",                    limit: 255,                null: false
+    t.string   "name",                   limit: 255
+    t.string   "client",                 limit: 255
+    t.string   "server",                 limit: 255
+    t.integer  "height",                 limit: 4
+    t.integer  "deposit_confirmations",  limit: 4,   default: 6,    null: false
+    t.integer  "withdraw_confirmations", limit: 4,   default: 6,    null: false
+    t.string   "explorer_address",       limit: 255
+    t.string   "explorer_transaction",   limit: 255
+    t.string   "status",                 limit: 255
+    t.boolean  "case_sensitive",                     default: true, null: false
+    t.datetime "created_at",                                        null: false
+    t.datetime "updated_at",                                        null: false
   end
 
   add_index "blockchains", ["key"], name: "index_blockchains_on_key", unique: true, using: :btree
