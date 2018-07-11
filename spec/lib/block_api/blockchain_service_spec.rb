@@ -39,7 +39,7 @@ describe BlockAPI::Ethereum do
           end
         end
         BlockAPI::Ethereum.any_instance.expects(:latest_block_number).returns(latest_block)
-        BlockchainService::Ethereum.new(blockchain).process_blockchain
+        BlockchainService.new(blockchain).process_blockchain
       end
 
       subject { Deposits::Coin.where(currency_id: :eth).first }

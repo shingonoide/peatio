@@ -13,7 +13,7 @@ while running
 
     processed = 0
 
-    "BlockchainService::#{bc.client.capitalize}".constantize.new(bc).process_blockchain
+    BlockchainService.new(bc).process_blockchain
 
     Rails.logger.info { "Processing #{bc.name} blocks." }
   rescue => e
