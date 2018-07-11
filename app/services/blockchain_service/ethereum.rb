@@ -25,14 +25,14 @@ module BlockchainService
             #currency = find_currency(tx)
             #next unless currency
 
-            # WARNING: shitty code {
+            # WARNING: shitty code
+            ## {
             address = @client.to_address(tx)
             address_in_db = find_address_in_db(address)
             puts "address in db #{address_in_db}" if address_in_db.present?
             if address_in_db.present?
               trn = @client.build_deposit(tx, block_json, latest_block, address_in_db[:currency])
-              trn.fetch(:enties).each_with_index do |entry, i|
-                # }
+              trn.fetch(:entries).each_with_index do |entry, i|
 
                 deposits << {
                     txid:           trn[:id],
@@ -45,13 +45,14 @@ module BlockchainService
                 }
               end
             end
-            # }
+            ## }
 
-            #### Save deposits for single block.
+            #### Save single block deposits.
           end
           deposits.each { |hash| Deposits::Coin.create! hash }
         end
 
+        # Update blockchain height.
         current_block += 1
         @blockchain.update(height: current_block)
       end
@@ -70,6 +71,8 @@ module BlockchainService
       #       !Deposit.where(currency: currency, txid: tx[:id], txout: index).exists?
       # end
       #
+      #
+      # TODO: return data in specia format
       return nil if pa.blank?
       {
         member: pa.account.member,
