@@ -64,6 +64,7 @@ module BlockAPI
       if is_eth_tx?(tx)
         normalize_address(tx['to'])
       else
+        #binding.pry
         normalize_address('0x' + abi_explode(tx['input'])[:arguments][0][26..-1])
       end
     end

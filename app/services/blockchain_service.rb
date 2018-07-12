@@ -26,12 +26,13 @@ class BlockchainService
         transactions.each do |tx|
 
           # Skip contract creation transactions.
-          next if tx['to'].blank?
+          # next if tx['to'].blank?
           # Skip outcomes (less than zero) and contract transactions (zero).
-          next if tx.fetch('value').hex.to_d <= 0
+          # next if tx.fetch('value').hex.to_d <= 0
 
           # WARNING: shitty code
           ## {
+          binding.pry
           address = @client.to_address(tx)
           address_in_db = find_address_in_db(address)
           if address_in_db.present?
@@ -39,13 +40,13 @@ class BlockchainService
             trn.fetch(:entries).each_with_index do |entry, i|
 
               deposits << {
-                  txid:           trn[:id],
-                  address:        entry[:address],
-                  amount:         entry[:amount],
-                  member:         address_in_db[:member],
-                  currency:       address_in_db[:currency],
-                  txout:          i,
-                  confirmations:  trn[:confirmations]
+                txid:           trn[:id],
+                address:        entry[:address],
+                amount:         entry[:amount],
+                member:         address_in_db[:member],
+                currency:       address_in_db[:currency],
+                txout:          i,
+                confirmations:  trn[:confirmations]
               }
             end
           end
