@@ -1,8 +1,7 @@
 # encoding: UTF-8
 # frozen_string_literal: true
 
-describe BlockAPI::Ethereum do
-  let(:client) { BlockAPI['eth-rinkeby'] }
+describe BlockchainService do
 
   around do |example|
     WebMock.disable_net_connect!
@@ -10,47 +9,61 @@ describe BlockAPI::Ethereum do
     WebMock.allow_net_connect!
   end
 
-  describe '#get_block' do
+  describe 'BlockAPI::Ethereum' do
+    let(:block_data) do
+      Rails.root.join('spec', 'resources', block_file_name)
+        .yield_self { |file_path| File.open(file_path) }
+        .yield_self { |file| JSON.load(file) }
+    end
+
+    let(:start_block)   { block_data.first['result']['number'].hex }
+    let(:latest_block)  { block_data.last['result']['number'].hex }
+
+    let(:blockchain) do
+      Blockchain.find_by_key('eth-rinkeby')
+        .tap { |b| b.update(height: start_block)}
+    end
+    let(:currency) { Currency.find_by_id(:eth) }
+
+    let!(:payment_address) do
+      create(:eth_payment_address, address: '0xdf87837df26801BDcB3602E722ACA82d5beaAb04')
+    end
+
+    let(:client) { BlockAPI[blockchain.key] }
+
+    def request_body(block_number, index)
+      { jsonrpc: '2.0',
+        id:      index + 1, # json_rpc_call_id increments on each request.
+        method:  :eth_getBlockByNumber,
+        params:  [block_number, true]
+      }.to_json
+    end
+
     context 'single deposit was created during blockchain proccessing' do
-      # TODO: create blockchain with start_block because now it's hardcoded in factory.
-      let(:start_block) { 2610847 }
-      let(:latest_block) { 2610906 }
-      let(:blockchain) { Blockchain.find_by_key('eth-rinkeby') }
-      let(:block_data) { Rails.root.join('spec', 'resources', 'ethereum-data.json') }
-      let!(:payment_address) { create(:eth_payment_address, address: '0xdf87837df26801BDcB3602E722ACA82d5beaAb04')}
+      # File with fake json rpc data.
+      let(:block_file_name) { 'ethereum-data.json' }
 
-
-      # subject { client.get_block(current_block) }
-
-      def request_body(block_number, index)
-        { jsonrpc: '2.0',
-          id:      index + 1, # TODO:
-          method:  :eth_getBlockByNumber,
-          params:  [block_number, true]
-        }.to_json
-      end
-
-      # TODO: make this before clean.
       before do
-        File.open(block_data) do |f|
-          blocks = JSON.load(f)
-          blocks.each_with_index do |blk, index|
-            stub_request(:post, client.endpoint).with(body: request_body(blk['result']['number'],index)).to_return(body: blk.to_json)
-          end
+        # Mock requests and methods.
+        client.class.any_instance.stubs(:latest_block_number).returns(latest_block)
+        block_data.each_with_index do |blk, index|
+          stub_request(:post, client.endpoint)
+            .with(body: request_body(blk['result']['number'],index))
+            .to_return(body: blk.to_json)
         end
-        BlockAPI::Ethereum.any_instance.expects(:latest_block_number).returns(latest_block)
+        # Process blockchain data.
         BlockchainService.new(blockchain).process_blockchain
       end
 
-      subject { Deposits::Coin.where(currency_id: :eth).first }
+      subject { Deposits::Coin.where(currency: currency).first }
 
       it 'creates single deposit' do
-        expect(Deposits::Coin.where(currency_id: :eth).count).to eq 1
+        expect(Deposits::Coin.where(currency: currency).count).to eq 1
       end
 
       it 'creates deposit with correct amount' do
         # '0x162ea854d0fc000' - transaction 'value' from ethereum-data.json
-        expect(subject.amount).to eq '0x162ea854d0fc000'.hex.to_d / Currency.find_by_id(:eth).base_factor
+        expect(subject.amount).to eq '0x162ea854d0fc000'.hex.to_d / currency.base_factor
       end
 
       it 'creates deposit with correct address' do
@@ -64,10 +77,18 @@ describe BlockAPI::Ethereum do
         expect(subject.txid).to eq '0x03e25b5339de3b453e6f56391410ecaff10e332f34b7894382846f70a9755302'
       end
 
-      it 'creates deposit with correct confirmations amount' do
-        # TODO.
-        # expect(subject.confirmations).to eq latest_block - ?
+      context 'nothing was broken if we process same data twice' do
+        before do
+          blockchain.update(height: start_block)
+        end
+
+        it 'doesn\'t change deposit' do
+          expect(blockchain.height).to eq start_block
+          expect{ BlockchainService.new(blockchain).process_blockchain}.not_to change{subject}
+          expect(blockchain.height).not_to eq start_block
+        end
       end
+
     end
   end
 end
