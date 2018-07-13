@@ -1,6 +1,11 @@
+# encoding: UTF-8
+# frozen_string_literal: true
+
+# TODO: Add specs.
 class Wallet < ActiveRecord::Base
   include BelongsToCurrency
 
+  # TODO: Add validations.
   scope :active, -> { where(status: 'active') }
 end
 

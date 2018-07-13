@@ -26,7 +26,7 @@ class BlockchainService
       save_deposits!(deposits)
 
       # Mark block as processed if both deposits and withdrawals were confirmed.
-      @blockchain.update(height: block_id) if latest_block - block_id > @blockchain.confirmations_max
+      @blockchain.update(height: block_id) if latest_block - block_id > @blockchain.min_confirmations
       # TODO: exceptions processing.
     end
   end
@@ -65,11 +65,7 @@ class BlockchainService
       # Otherwise update confirmations amount for existing deposit.
       if deposit.confirmations != deposit_hash.fetch(:confirmations)
         deposit.update(confirmations: deposit_hash.fetch(:confirmations))
-      end
-
-      # Accept deposit if it received minimum confirmations for current blockchain.
-      if @blockchain.deposit_confirmations > 0 && deposit.confirmations >= @blockchain.deposit_confirmations
-        deposit.accept!
+        deposit.accept! if deposit.confirmations >= @blockchain.min_confirmations
       end
     end
   end
@@ -82,12 +78,4 @@ class BlockchainService
         yield payment_address if block_given?
       end
   end
-
-  # TODO: check if Deposit doesn't exist.
-  # example deposit_coin.rb
-  # def deposit_entry_processable?(currency, tx, entry, index)
-  #   PaymentAddress.where(currency: currency, address: entry[:address]).exists? &&
-  #       !Deposit.where(currency: currency, txid: tx[:id], txout: index).exists?
-  # end
-  #
 end
