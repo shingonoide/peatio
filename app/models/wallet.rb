@@ -17,8 +17,8 @@ end
 #  id          :integer          not null, primary key
 #  currency_id :string(5)
 #  name        :string(64)
-#  address     :string(255)
-#  kind        :string(32)
+#  address     :string(255)      not null
+#  kind        :string(32)       not null
 #  nsig        :integer
 #  parent      :integer
 #  status      :string(32)

@@ -6,9 +6,9 @@ class CreateBlockchains < ActiveRecord::Migration
       t.string  :client,              null: false
       t.string  :server
       t.integer :height,              null: false
-      t.integer :min_confirmations,   null: false, default: 6
       t.string  :explorer_address
       t.string  :explorer_transaction
+      t.integer :min_confirmations,   null: false, default: 6
       t.string  :status,              null: false,                index: true
 
       t.timestamps null: false

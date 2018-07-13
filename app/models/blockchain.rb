@@ -29,11 +29,10 @@ end
 #  client               :string(255)      not null
 #  server               :string(255)
 #  height               :integer          not null
-#  min_confirmations    :integer          default(6), not null
 #  explorer_address     :string(255)
 #  explorer_transaction :string(255)
+#  min_confirmations    :integer          default(6), not null
 #  status               :string(255)      not null
-#  case_sensitive       :boolean          default(TRUE), not null
 #  created_at           :datetime         not null
 #  updated_at           :datetime         not null
 #
