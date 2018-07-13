@@ -39,25 +39,6 @@ module BlockAPI
         is_valid: valid_address?(normalize_address(address)) }
     end
 
-    # TODO: eth & erc20 #create_withdrawal support
-    # def create_withdrawal!(issuer, recipient, amount, options = {})
-    #   permit_transaction(issuer, recipient)
-    #   json_rpc(
-    #     :eth_sendTransaction,
-    #     [{
-    #       from:  normalize_address(issuer.fetch(:address)),
-    #       to:    normalize_address(recipient.fetch(:address)),
-    #       value: '0x' + convert_to_base_unit!(amount).to_s(16),
-    #       gas:   options.key?(:gas_limit) ? '0x' + options[:gas_limit].to_s(16) : nil
-    #     }.compact]
-    #   ).fetch('result').yield_self do |txid|
-    #     raise BlockAPI::Error, \
-    #       "#{blockchain.key} withdrawal from #{normalize_address(issuer[:address])} to #{normalize_address(recipient[:address])} failed." \
-    #         unless valid_txid?(normalize_txid(txid))
-    #     normalize_txid(txid)
-    #   end
-    # end
-
     def get_block(height)
       current_block   = height || 0
       json_rpc(:eth_getBlockByNumber, ["0x#{current_block.to_s(16)}", true]).fetch('result')
@@ -67,7 +48,6 @@ module BlockAPI
       if is_eth_tx?(tx)
         normalize_address(tx['to'])
       else
-        #binding.pry
         normalize_address('0x' + abi_explode(tx['input'])[:arguments][0][26..-1])
       end
     end
@@ -96,12 +76,12 @@ module BlockAPI
       !invalid_transaction?(tx)
     end
 
-    def is_erc20_tx?(tx)
-      !is_eth_tx?(tx)
-    end
-
     def is_eth_tx?(tx)
       tx['input'].blank? || tx['input'].hex <= 0
+    end
+
+    def is_erc20_tx?(tx)
+      !is_eth_tx?(tx)
     end
 
   protected

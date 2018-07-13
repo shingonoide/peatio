@@ -94,6 +94,7 @@ FactoryBot.define do
     end
 
     trait :trst do
+      blockchain_key       'eth-rinkeby'
       code                 'trst'
       symbol               'Ξ'
       type                 'coin'

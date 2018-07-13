@@ -38,7 +38,8 @@ class BlockchainService
       next if @client.invalid_transaction?(tx)
 
       payment_addresses_where(address: @client.to_address(tx)) do |payment_address|
-        # TODO: Add comment.
+        # If payment address currency doesn't match with blockchain
+        # transaction currency skip this payment address.
         next if payment_address.currency.code.eth? != @client.is_eth_tx?(tx)
 
         deposit_txs = @client.build_deposit(tx, block_json, latest_block, payment_address.currency)
@@ -78,7 +79,7 @@ class BlockchainService
     PaymentAddress
       .where(options)
       .each do |payment_address|
-        yield payment_address
+        yield payment_address if block_given?
       end
   end
 
