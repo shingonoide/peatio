@@ -16,10 +16,6 @@ class Blockchain < ActiveRecord::Base
   def status
     super&.inquiry
   end
-
-  def case_insensitive?
-    !case_sensitive?
-  end
 end
 
 # == Schema Information

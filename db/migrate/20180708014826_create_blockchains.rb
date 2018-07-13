@@ -10,7 +10,6 @@ class CreateBlockchains < ActiveRecord::Migration
       t.string  :explorer_address
       t.string  :explorer_transaction
       t.string  :status,              null: false,                index: true
-      t.boolean :case_sensitive,      null: false, default: true
 
       t.timestamps null: false
     end
