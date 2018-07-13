@@ -93,11 +93,11 @@ module BlockAPI
     end
 
     def normalize_address(address)
-      blockchain.case_sensitive? ? address : address.downcase
+      address.downcase
     end
 
     def normalize_txid(txid)
-      blockchain.case_sensitive? ? txid : txid.downcase
+      txid.downcase
     end
 
     %i[ load_balance load_deposit create_address create_withdrawal inspect_address ].each do |method|
