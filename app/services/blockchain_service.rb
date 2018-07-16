@@ -9,7 +9,7 @@ module BlockchainService
     #
     # Returns Service for given blockchain key.
     #
-    # @param code [String, Symbol]
+    # @param key [String, Symbol]
     #   The blockchain key.
     def [](key)
       blockchain = Blockchain.find_by_key(key)
