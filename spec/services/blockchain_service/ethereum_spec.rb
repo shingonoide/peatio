@@ -11,7 +11,7 @@ describe BlockchainService::Ethereum do
 
   describe 'Client::Ethereum' do
     let(:block_data) do
-      Rails.root.join('spec', 'resources', block_file_name)
+      Rails.root.join('spec', 'resources', 'ethereum-data', block_file_name)
         .yield_self { |file_path| File.open(file_path) }
         .yield_self { |file| JSON.load(file) }
     end
@@ -21,7 +21,7 @@ describe BlockchainService::Ethereum do
 
     let(:blockchain) do
       Blockchain.find_by_key('eth-rinkeby')
-        .tap { |b| b.update(height: start_block)}
+        .tap { |b| b.update(height: start_block) }
     end
 
     let(:client) { Client[blockchain.key] }
@@ -36,7 +36,7 @@ describe BlockchainService::Ethereum do
 
     context 'single ETH deposit was created during blockchain proccessing' do
       # File with real json rpc data for bunch of blocks.
-      let(:block_file_name) { 'ethereum-data.json' }
+      let(:block_file_name) { '2621839-2621843.json' }
 
       # Use rinkeby.etherscan.io to fetch transactions data.
       let(:expected_deposits) do
@@ -93,7 +93,7 @@ describe BlockchainService::Ethereum do
 
     context 'two TRST deposits was created during blockchain proccessing' do
       # File with real json rpc data for bunch of blocks.
-      let(:block_file_name) { 'ethereum-data.json' }
+      let(:block_file_name) { '2621839-2621843.json' }
 
       # Use rinkeby.etherscan.io to fetch transactions data.
       let(:expected_deposits) do
@@ -152,5 +152,7 @@ describe BlockchainService::Ethereum do
         end
       end
     end
+
+
   end
 end

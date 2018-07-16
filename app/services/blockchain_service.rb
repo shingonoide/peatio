@@ -46,13 +46,39 @@ module BlockchainService
       end
     end
 
-    def payment_addresses_where(options)
+    def update_withdrawals!(withdrawals)
+      withdrawals.each do |withdrawal_hash|
+
+        # If withdrawal doesn't exist create it.
+        withdrawal = Withdraws::Coin.confirming.find_by(withdrawal_hash.except(:confirmations))
+
+        # Otherwise update confirmations amount for existing deposit.
+        if withdrawal.confirmations != withdrawal_hash.fetch(:confirmations)
+          withdrawal_hash.update(confirmations: withdrawal_hash.fetch(:confirmations))
+          withdrawal.success if withdrawal.confirmations >= @blockchain.min_confirmations
+        end
+      end
+    end
+
+    def payment_addresses_where(options = {})
       options = { currency_id: @blockchain.currencies.pluck(:id) }.merge(options)
       PaymentAddress
-          .where(options)
-          .each do |payment_address|
-        yield payment_address if block_given?
-      end
+        .includes(:currency)
+        .where(options)
+        .each do |payment_address|
+          yield payment_address if block_given?
+        end
+    end
+
+    def wallets_where(options = {})
+      options = { currency_id: @blockchain.currencies.pluck(:id),
+                  kind: %i[cold warm hot] }.merge(options)
+      Wallet
+        .includes(:currency)
+        .where(options)
+        .each do |wallet|
+          yield wallet if block_given?
+        end
     end
   end
 end

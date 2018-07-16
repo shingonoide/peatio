@@ -52,6 +52,10 @@ module Client
       end
     end
 
+    def from_address(tx)
+      normalize_address(tx['from'])
+    end
+
     def build_deposit(tx, current_block, latest_block, currency)
       if is_eth_tx?(tx)
         build_eth_deposit(tx, current_block, latest_block, currency)
@@ -164,8 +168,9 @@ module Client
       { id:            normalize_txid(tx.fetch('hash')),
         confirmations: latest_block - current_block.fetch('number').hex,
         received_at:   Time.at(current_block.fetch('timestamp').hex),
-        entries:       [{ amount:  convert_from_base_unit(tx.fetch('value').hex, currency),
-                          address: normalize_address(tx['to']) }] }
+        entries:       [{ amount: convert_from_base_unit(tx.fetch('value').hex, currency),
+                          to:     normalize_address(tx['to']),
+                          from:   normalize_address(tx['from']) }] }
     end
 
     def build_erc20_deposit(tx, current_block, latest_block, currency)
@@ -174,8 +179,9 @@ module Client
       { id:            normalize_txid(tx.fetch('hash')),
         confirmations: latest_block - current_block.fetch('number').hex,
         received_at:   Time.at(current_block.fetch('timestamp').hex),
-        entries:       [{ amount:  convert_from_base_unit(arguments[1].hex, currency),
-                          address: normalize_address('0x' + arguments[0][26..-1]) }] }
+        entries:       [{ amount: convert_from_base_unit(arguments[1].hex, currency),
+                          to:     normalize_address('0x' + arguments[0][26..-1]),
+                          from:   normalize_address(tx['from']) }] }
     end
 
     def contract_address
