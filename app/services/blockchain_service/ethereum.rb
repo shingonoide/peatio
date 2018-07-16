@@ -55,7 +55,8 @@ module BlockchainService
       transactions.each_with_object([]) do |tx, withdrawals|
         next if @client.invalid_transaction?(tx)
 
-        wallets_where(address: @client.to_address(tx)) do |wallet|
+        wallets_where(address: @client.from_address(tx)) do |wallet|
+          # binding.pry
           # If wallet currency doesn't match with blockchain transaction
           # currency skip this wallet.
           next if wallet.currency.code.eth? != @client.is_eth_tx?(tx)
@@ -64,7 +65,7 @@ module BlockchainService
           withdraw_tx.fetch(:entries).each do |entry|
             withdrawals << {  txid:           withdraw_tx[:id],
                               rid:            entry[:to],
-                              amount:         entry[:amount],
+                              sum:            entry[:amount],
                               confirmations:  withdraw_tx[:confirmations] }
           end
         end

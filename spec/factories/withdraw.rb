@@ -31,4 +31,19 @@ FactoryBot.define do
       end
     end
   end
+
+  factory :eth_withdraw, class: Withdraws::Coin do
+    currency { Currency.find(:eth) }
+    member { create(:member, :level_3) }
+    rid { Faker::Bitcoin.address }
+    sum { 10.to_d }
+    type 'Withdraws::Coin'
+
+    account do
+      member.get_account(:eth).tap do |a|
+        a.balance = 50
+        a.save(validate: false)
+      end
+    end
+  end
 end

@@ -49,8 +49,9 @@ module BlockchainService
     def update_withdrawals!(withdrawals)
       withdrawals.each do |withdrawal_hash|
 
-        # If withdrawal doesn't exist create it.
-        withdrawal = Withdraws::Coin.confirming.find_by(withdrawal_hash.except(:confirmations))
+        # TODO: throws ActiveRecord::RecordNotFound.
+        # binding.pry
+        withdrawal = Withdraws::Coin.confirming.find_by!(withdrawal_hash.except(:confirmations))
 
         # Otherwise update confirmations amount for existing deposit.
         if withdrawal.confirmations != withdrawal_hash.fetch(:confirmations)
@@ -58,6 +59,8 @@ module BlockchainService
           withdrawal.success if withdrawal.confirmations >= @blockchain.min_confirmations
         end
       end
+    rescue ActiveRecord::RecordNotFound => e
+      e
     end
 
     def payment_addresses_where(options = {})

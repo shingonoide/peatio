@@ -91,7 +91,7 @@ describe BlockchainService::Ethereum do
       end
     end
 
-    context 'two TRST deposits was created during blockchain proccessing' do
+    context 'two TRST deposits were created during blockchain proccessing' do
       # File with real json rpc data for bunch of blocks.
       let(:block_file_name) { '2621839-2621843.json' }
 
@@ -153,6 +153,77 @@ describe BlockchainService::Ethereum do
       end
     end
 
+    context 'three ETH withdrawals states were updated during blockchain proccessing' do
+      # File with real json rpc data for bunch of blocks.
+      let(:block_file_name) { '2621895-2621903.json' }
+
+      # Use rinkeby.etherscan.io to fetch transactions data.
+      let(:expected_withdrawals) do
+        [
+          {
+            sum:  '0x14d1120d7b160000'.hex.to_d / currency.base_factor,
+            rid:  '0xb3ebc7b5b631e8d145f383c8cd07f0f00dd56a30',
+            txid: '0x643ff4da78faca97454766d9c2a1d455c19083591c87013740acc60286d6dd80'
+          }
+        ]
+      end
+
+      let(:member) { create(:member, :level_3, :barong) }
+      let!(:eth_account) { member.get_account(:eth).tap { |a| a.update!(locked: 10, balance: 50) } }
+
+      let!(:withdrawals) do
+        expected_withdrawals.each_with_object([]) do |withdrawal_hash, withdrawals|
+          withdrawal_hash.merge!\
+            member: member,
+            account: eth_account,
+            aasm_state: :confirming,
+            currency: currency
+          withdrawals << create(:eth_withdraw, withdrawal_hash)
+        end
+      end
+
+      let(:currency) { Currency.find_by_id(:eth) }
+
+      let!(:wallet) do
+        create(:wallet, :eth_hot, address: '0x52cdba517843388838b9ba1b57fde23f493a17a1')
+      end
+
+      before do
+        # Mock requests and methods.
+        client.class.any_instance.stubs(:latest_block_number).returns(latest_block)
+        block_data.each_with_index do |blk, index|
+          stub_request(:post, client.endpoint)
+            .with(body: request_body(blk['result']['number'], index))
+            .to_return(body: blk.to_json)
+        end
+        # Process blockchain data.
+        BlockchainService[blockchain.key].process_blockchain
+        # binding.pry
+      end
+
+      subject { Withdraws::Coin.where(currency: currency) }
+
+      it 'updates states for three withdrawals' do
+        expect(subject.count).to eq expected_withdrawals.count
+      end
+
+      # it 'creates deposits with correct attributes' do
+      #   expected_deposits.each do |expected_deposit|
+      #     expect(subject.where(expected_deposit).count).to eq 1
+      #   end
+      # end
+      #
+      # context 'we process same data one more time' do
+      #   before do
+      #     blockchain.update(height: start_block)
+      #   end
+      #
+      #   it 'doesn\'t change deposit' do
+      #     expect(blockchain.height).to eq start_block
+      #     expect{ BlockchainService[blockchain.key].process_blockchain}.not_to change{subject}
+      #   end
+      # end
+    end
 
   end
 end

@@ -3,7 +3,7 @@
 
 FactoryBot.define do
   factory :wallet do
-    trait 'eth_hot' do
+    trait :eth_hot do
       currency_id        'eth'
       name               'Ethereum Hot Wallet'
       address            '249048804499541338815845805798634312140346616732'
