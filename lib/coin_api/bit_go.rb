@@ -50,7 +50,7 @@ module CoinAPI
 
     def load_deposit!(txid)
       rest_api(:get, '/wallet/' + urlsafe_wallet_id + '/tx/' + normalize_txid(txid))
-        .yield_self { |tx| build_deposit(tx, with_entries: false) }
+        .yield_self { |tx| build_deposit(tx) }
     end
 
     def create_withdrawal!(issuer, recipient, amount, options = {})
@@ -115,14 +115,13 @@ module CoinAPI
       CGI.escape(id)
     end
 
-    def build_deposit(tx, with_entries: true)
-      deposit = { id:            normalize_txid(tx.fetch('id')),
-                  confirmations: tx.fetch('confirmations').to_i,
-                  received_at:   Time.parse(tx.fetch('date')) }
-      return deposit unless with_entries
+    def build_deposit(tx)
       entries = build_deposit_entries(tx)
       return if entries.blank?
-      deposit.merge(entries: entries)
+      { id:            normalize_txid(tx.fetch('id')),
+        confirmations: tx.fetch('confirmations').to_i,
+        entries:       entries,
+        received_at:   Time.parse(tx.fetch('date')) }
     end
 
     def build_deposit_entries(tx)

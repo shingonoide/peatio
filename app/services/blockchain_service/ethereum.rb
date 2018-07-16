@@ -12,7 +12,9 @@ module BlockchainService
 
         next if block_json.blank?
         transactions = block_json.fetch('transactions')
-        deposits = build_deposits(transactions, block_json, latest_block)
+
+        deposits    = build_deposits(transactions, block_json, latest_block)
+        withdrawals = build_withdrawals(transactions, block_json, latest_block)
 
         save_deposits!(deposits)
 
