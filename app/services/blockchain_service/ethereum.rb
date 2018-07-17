@@ -37,15 +37,16 @@ module BlockchainService
             # transaction currency skip this payment address.
             next if payment_address.currency.code.eth? != @client.is_eth_tx?(tx)
 
-            deposit_tx = @client.build_deposit(tx, block_json, latest_block, payment_address.currency)
-            deposit_tx.fetch(:entries).each_with_index do |entry, i|
-              deposits << { txid:           deposit_tx[:id],
-                            address:        entry[:to],
-                            amount:         entry[:amount],
-                            member:         payment_address.account.member,
-                            currency:       payment_address.currency,
-                            txout:          i,
-                            confirmations:  deposit_tx[:confirmations] }
+            @client
+              .build_transaction(tx, block_json, latest_block, payment_address.currency)
+              .tap do |deposit_tx|
+                deposits << { txid:           deposit_tx[:id],
+                              address:        deposit_tx[:to],
+                              amount:         deposit_tx[:amount],
+                              member:         payment_address.account.member,
+                              currency:       payment_address.currency,
+                              txout:          0,
+                              confirmations:  deposit_tx[:confirmations] }
             end
           end
         end
@@ -62,12 +63,13 @@ module BlockchainService
             # currency skip this wallet.
             next if wallet.currency.code.eth? != @client.is_eth_tx?(tx)
 
-            withdraw_tx = @client.build_deposit(tx, block_json, latest_block, wallet.currency)
-            withdraw_tx.fetch(:entries).each do |entry|
-              withdrawals << {  txid:           withdraw_tx[:id],
-                                rid:            entry[:to],
-                                sum:            entry[:amount],
-                                confirmations:  withdraw_tx[:confirmations] }
+            @client
+              .build_transaction(tx, block_json, latest_block, wallet.currency)
+              .tap do |withdraw_tx|
+                withdrawals << {  txid:           withdraw_tx[:id],
+                                  rid:            withdraw_tx[:to],
+                                  sum:            withdraw_tx[:amount],
+                                  confirmations:  withdraw_tx[:confirmations] }
             end
           end
         end

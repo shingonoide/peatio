@@ -56,12 +56,15 @@ module Client
       normalize_address(tx['from'])
     end
 
-    def build_deposit(tx, current_block, latest_block, currency)
+    def build_transaction(tx, current_block_json, latest_block, currency)
       if is_eth_tx?(tx)
-        build_eth_deposit(tx, current_block, latest_block, currency)
+        build_eth_transaction(tx, currency)
       else
-        build_erc20_deposit(tx, current_block, latest_block, currency)
+        build_erc20_transaction(tx, currency)
       end
+        .merge id:            normalize_txid(tx.fetch('hash')),
+               confirmations: latest_block - current_block_json.fetch('number').hex,
+               received_at:   Time.at(current_block_json.fetch('timestamp').hex)
     end
 
     def latest_block_number
@@ -164,24 +167,18 @@ module Client
       txid.to_s.match?(/\A0x[A-F0-9]{64}\z/i)
     end
 
-    def build_eth_deposit(tx, current_block, latest_block, currency)
-      { id:            normalize_txid(tx.fetch('hash')),
-        confirmations: latest_block - current_block.fetch('number').hex,
-        received_at:   Time.at(current_block.fetch('timestamp').hex),
-        entries:       [{ amount: convert_from_base_unit(tx.fetch('value').hex, currency),
-                          to:     normalize_address(tx['to']),
-                          from:   normalize_address(tx['from']) }] }
+    def build_eth_transaction(tx, currency)
+      { amount: convert_from_base_unit(tx.fetch('value').hex, currency),
+        to:     normalize_address(tx['to']),
+        from:   normalize_address(tx['from']) }
     end
 
-    def build_erc20_deposit(tx, current_block, latest_block, currency)
+    def build_erc20_transaction(tx, currency)
       arguments = abi_explode(tx['input'])[:arguments]
 
-      { id:            normalize_txid(tx.fetch('hash')),
-        confirmations: latest_block - current_block.fetch('number').hex,
-        received_at:   Time.at(current_block.fetch('timestamp').hex),
-        entries:       [{ amount: convert_from_base_unit(arguments[1].hex, currency),
-                          to:     normalize_address('0x' + arguments[0][26..-1]),
-                          from:   normalize_address(tx['from']) }] }
+      { amount: convert_from_base_unit(arguments[1].hex, currency),
+        to:     normalize_address('0x' + arguments[0][26..-1]),
+        from:   normalize_address(tx['from']) }
     end
 
     def contract_address
