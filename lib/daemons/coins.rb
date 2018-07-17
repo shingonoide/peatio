@@ -7,7 +7,7 @@ running = true
 Signal.trap(:TERM) { running = false }
 
 while running
-  Currency.coins.order(id: :asc).each do |currency|
+  Currency.enabled.coins.order(id: :asc).each do |currency|
     break unless running
     Rails.logger.info { "Processing #{currency.code.upcase} deposits." }
     client    = currency.api
